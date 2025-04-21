@@ -1,8 +1,8 @@
 name: Build Loop
 
 on:
-# Trigger-Aktivierung
-workflow_dispatch:
+  # Trigger-Aktivierung
+  workflow_dispatch:
 
 jobs:
 build:
