@@ -1,0 +1,10 @@
+name: Dummy Trigger
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Dummy workflow to trigger GitHub actions refresh"
