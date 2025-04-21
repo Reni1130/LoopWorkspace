@@ -1,0 +1,66 @@
+name: Build Loop
+
+on:
+workflow_dispatch:
+
+jobs:
+build:
+name: Build Loop
+runs-on: macos-latest
+timeout-minutes: 60
+
+steps:
+- name: Checkout repository
+uses: actions/checkout@v3
+
+- name: Set up Ruby
+uses: ruby/setup-ruby@v1
+with:
+ruby-version: 2.7
+
+- name: Install Bundler
+run: gem install bundler
+
+- name: Install dependencies
+run: bundle install
+
+- name: Validate Secrets
+id: validSecrets
+run: |
+echo "valid=true" >> $GITHUB_OUTPUT
+for secret in MATCH_PASSWORD APP_STORE_CONNECT_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID DEVELOPER_TEAM_ID APP_GROUP; do
+if [[ -z "${{ secrets[$secret] }}" ]]; then
+echo "::warning::Missing secret: $secret"
+echo "valid=false" >> $GITHUB_OUTPUT
+fi
+done
+
+- name: Sign
+if: steps.validSecrets.outputs.valid == 'true'
+run: |
+echo "${{ secrets.APP_STORE_CONNECT_KEY }}" | base64 --decode > AuthKey.p8
+mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+bundle exec fastlane match development --readonly
+bundle exec fastlane match appstore --readonly
+
+- name: Build
+run: |
+xcodebuild -workspace LoopWorkspace.xcworkspace \
+-scheme LoopWorkspace \
+-configuration Release \
+-sdk iphoneos \
+-derivedDataPath build
+
+- name: Export IPA
+run: |
+mkdir -p output
+xcodebuild -exportArchive \
+-archivePath build/Build/Products/Release-iphoneos/LoopWorkspace.xcarchive \
+-exportPath output \
+-exportOptionsPlist exportOptions.plist
+
+- name: Upload IPA
+uses: actions/upload-artifact@v3
+with:
+name: loop.ipa
+path: output
