@@ -1,7 +1,7 @@
 name: Build Loop
 
 on:
-  # Trigger-Aktivierung
+  # Trigger-Aktivierung geändert
   workflow_dispatch:
 
 jobs:
